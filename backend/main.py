@@ -103,6 +103,11 @@ class PasswordResetRequest(BaseModel):
     email: str
 
 
+class DraftCreate(BaseModel):
+    title: str
+    file_size_kb: int = 0
+
+
 class UserSettingsUpdate(BaseModel):
     theme: str | None = None
     language: str | None = None
@@ -407,6 +412,31 @@ def get_user_drafts(
             for d in drafts
         ]
     }
+
+
+@app.post("/drafts")
+def create_user_draft(
+    request: DraftCreate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new draft for the current user."""
+    try:
+        new_draft = Draft(
+            user_id=current_user["id"],
+            title=request.title,
+            file_path=f"/cloud/{current_user['id']}/{request.title}.gef",
+            file_size_kb=request.file_size_kb,
+            is_cloud_synced=True
+        )
+        db.add(new_draft)
+        db.commit()
+        db.refresh(new_draft)
+        return {"message": "Proje kaydedildi", "draft_id": new_draft.draft_id}
+    except Exception as e:
+        logger.error("Draft create error: %s", e)
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Proje kaydedilemedi.")
 
 
 # ─── Auto Update Check (public) ───

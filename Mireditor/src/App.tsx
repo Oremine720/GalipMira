@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CustomTitleBar } from './components/CustomTitleBar';
 import { AuthPage } from './pages/AuthPage';
-import { DashboardPage } from './pages/DashboardPage';
+import { DashboardPage, ProjectConfig } from './pages/DashboardPage';
 import { EditorPage } from './pages/EditorPage';
 import { useAuthStore } from './store/useAuthStore';
 
@@ -9,9 +9,12 @@ const ipcRenderer = typeof window !== 'undefined' && (window as any).require
   ? (window as any).require('electron').ipcRenderer
   : null;
 
+// ─── Uygulama Durumları ───
+// Kullanıcının görebileceği sayfalar (Giriş, Yükleniyor, Panel, Editör)
 type AppView = 'auth' | 'loading' | 'dashboard' | 'editor';
 
 // ─── Shutdown Overlay ───
+// Uygulama kapatılırken ekranda gösterilen "Veriler kaydediliyor" animasyonudur.
 function ShutdownOverlay() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center animate-shutdown-in">
@@ -40,6 +43,8 @@ function ShutdownOverlay() {
   );
 }
 
+// ─── Loading Screen ───
+// Sayfalar arası geçişlerde ve veri yüklenirken gösterilen yükleme ekranı.
 function LoadingScreen({ text = 'Yükleniyor...' }: { text?: string }) {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center bg-[#0f0f0f]">
@@ -62,12 +67,15 @@ function LoadingScreen({ text = 'Yükleniyor...' }: { text?: string }) {
   );
 }
 
+// ─── Ana Uygulama Bileşeni (App) ───
+// Uygulamanın kök bileşenidir. Yönlendirmeleri (Routing), kimlik doğrulamayı ve uygulama kapanış durumunu yönetir.
 function App() {
   const { isAuthenticated } = useAuthStore();
   const [view, setView] = useState<AppView>(
     isAuthenticated ? 'loading' : 'auth'
   );
   const [isShuttingDown, setIsShuttingDown] = useState(false);
+  const [projectConfig, setProjectConfig] = useState<ProjectConfig | undefined>(undefined);
 
   // Shutdown IPC dinle
   useEffect(() => {
@@ -101,7 +109,8 @@ function App() {
     setView('loading');
   };
 
-  const handleOpenEditor = () => {
+  const handleOpenEditor = (config?: ProjectConfig) => {
+    setProjectConfig(config);
     setView('loading');
     setTimeout(() => setView('editor'), 600);
   };
@@ -122,7 +131,7 @@ function App() {
           <DashboardPage onOpenEditor={handleOpenEditor} />
         )}
         {view === 'editor' && (
-          <EditorPage onBack={handleBackToDashboard} />
+          <EditorPage onBack={handleBackToDashboard} config={projectConfig} />
         )}
       </div>
     </div>

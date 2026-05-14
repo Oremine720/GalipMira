@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(node -e \"const l = require\\('./node_modules/lucide-react'\\); console.log\\('RectangleHorizontal:', !!l.RectangleHorizontal, 'Pen:', !!l.Pen\\)\")"
+    ]
+  }
+}
